@@ -1,0 +1,6 @@
+# Build outputs
+build/
+.svelte-kit/
+
+# Node modules
+node_modules/
