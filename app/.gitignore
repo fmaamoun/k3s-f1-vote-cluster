@@ -1,3 +1,5 @@
+# app/.gitignore
+
 node_modules
 
 # Output
