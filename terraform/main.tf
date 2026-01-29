@@ -64,16 +64,16 @@ resource "aws_security_group" "k3s_sg" {
 
   # --- INGRESS RULES (Inbound) ---
 
-  # 1. SSH: For system administration (Ansible or Human)
+  # 1. SSH: Always needed for Ansible and Admin access
   ingress {
     description = "SSH Access for Admin"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Open to world for demo (Restrict to your IP in prod)
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # 2. K3s API Server: Allows 'kubectl' to control the cluster remotely
+  # 2. K3s API: Required for kubectl access from your PC
   ingress {
     description = "K3s Kubernetes API Server"
     from_port   = 6443
@@ -82,27 +82,33 @@ resource "aws_security_group" "k3s_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # 3. NodePort: Public access to the F1 Voting App
+  # 3. HTTP & HTTPS: Standard web access
   ingress {
-    description = "App Access (NodePort Range)"
-    from_port   = 30000
-    to_port     = 32767
+    description = "HTTP Web Traffic (Ingress)"
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # 4. Internal Traffic: Vital for Overlay network (Flannel/VXLAN) between Pods
+  ingress {
+    description = "HTTPS Web Traffic (Ingress)"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # 4. Internal Traffic (Vital for Pod-to-Pod communication)
   ingress {
     description = "Internal Cluster Communication (Self)"
     from_port   = 0
     to_port     = 0
-    protocol    = "-1" # All protocols
-    self        = true # Only allows members of this Security Group
+    protocol    = "-1"
+    self        = true
   }
 
   # --- EGRESS RULES (Outbound) ---
-  
-  # Allow all outbound traffic (package downloads, docker hub, etc.)
   egress {
     description = "Allow all outbound traffic"
     from_port   = 0

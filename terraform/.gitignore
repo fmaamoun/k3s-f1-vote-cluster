@@ -1,4 +1,4 @@
-# infra/.gitignore
+# terraform/.gitignore
 
 # Terraform binary downloads
 .terraform/
