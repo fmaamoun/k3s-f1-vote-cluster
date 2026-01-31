@@ -248,6 +248,12 @@
 						>Voting has ended for this race. Results will be published shortly.</Empty.Description
 					>
 				</Empty.Header>
+				<Empty.Content>
+					<Button variant="outline" size="sm" onclick={() => window.location.reload()}>
+						<RefreshCcwIcon />
+						Refresh
+					</Button>
+				</Empty.Content>
 			</Empty.Root>
 		</div>
 	{:else if currentView === 'published'}
