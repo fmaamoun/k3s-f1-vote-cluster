@@ -1,106 +1,126 @@
-C'est noté pour **Grafana** (et son copain **Prometheus**, car il faut bien quelqu'un pour collecter les données avant de les afficher). C'est la touche finale indispensable pour voir ce qui se passe dans le moteur.
+# Cloud-Native DevOps Architecture Showcase
 
-Voici l'**État des Lieux** consolidé. On passe officiellement du mode "Bricolage / Découverte" au mode "DevOps / Production".
+Ce projet est une démonstration technique d'une architecture Cloud Native & DevOps de bout en bout. Il matérialise les concepts d'Infrastructure-as-Code, d'orchestration et d'automatisation CI/CD pour garantir la résilience d'un service critique (application de vote en temps réel) sur un environnement cloud auto-géré.
 
----
+![Status](https://img.shields.io/github/actions/workflow/status/fmaamoun/k3s-f1-vote-cluster/deploy.yml?label=Pipeline&logo=github)
+![AWS](https://img.shields.io/badge/AWS-Infrastructure-FF9900?logo=amazon-aws&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-v1.5+-purple?logo=terraform)
+![Ansible](https://img.shields.io/badge/Ansible-2.14+-red?logo=ansible)
+![Kubernetes](https://img.shields.io/badge/K3s-Cluster-blue?logo=kubernetes)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions&logoColor=white)
 
-### 🗺️ ROADMAP DU PROJET F1-VOTE
+## 🏗️ Architecture Technique
 
-#### ✅ PHASE 1 : Infrastructure (Terraform)
+### 1. Infrastructure (AWS & Terraform)
+*   **Réseau (VPC)** :
+    *   **Public Zone (DMZ)** : Répartie sur 2 AZs (eu-west-3a/b) hébergeant l'Application Load Balancer (ALB) pour la haute disponibilité et le Bastion Host.
+    *   **Private Zone (The Vault)** : Sous-réseau isolé hébergeant le cluster Kubernetes (Master + Workers), inaccessible directement depuis Internet.
+    *   **Gateways** : Internet Gateway (IGW) pour le trafic public et **NAT Gateway** pour permettre aux nœuds privés de télécharger des mises à jour/images de manière sécurisée sans être exposés.
+*   **Security (Firewalls)** : Stratégie de **Security Groups** "Least Privilege" :
+    *   **Bastion SG** : Seul point d'entrée SSH (Port 22) ouvert sur le monde.
+    *   **ALB SG** : Filtre le trafic Web entrant et ne le redirige vers le cluster que s'il est légitime.
+    *   **Internal SG** : Verrouillage total des nœuds K3s. Ils n'acceptent que le trafic venant du Bastion (SSH/API), de l'ALB (HTTP), et entre eux (VXLAN/Flannel).
+*   **Compute (EC2)** :
+    *   **Bastion** : Instance proxy (`t3.micro`) pour l'administration sécurisée.
+    *   **Master Node** : Instance de contrôle (`t3.small`) gérant l'API Server et la base de données cluster.
+    *   **Worker Nodes** : Flotte de 2 instances (`t3.micro`) dédiées à l'exécution des conteneurs applicatifs.
+*   **Traffic Management (ALB)** : ALB AWS opérant au Layer 7, gérant la terminaison SSL (optionnelle) et routant le trafic HTTP vers les ports 80 des Workers (où écoute l'Ingress Controller Traefik).
+*   **Automation & Intelligence** :
+    *   **Dynamic OS** : Utilisation dynamique de la dernière AMI **Ubuntu 22.04 LTS** disponible pour garantir un OS patché et sécurisé.
+    *   **IaC Glueing** : Terraform génère automatiquement l'inventaire Ansible et les clés SSH, supprimant toute intervention manuelle entre le provisioning et la configuration.
 
-**Statut : TERMINÉ**
+### 2. Orchestration & Cluster (Kubernetes/K3s)
+*   **Distribution** : **K3s**, distribution Kubernetes légère certifiée CNCF.
+*   **Ingress Controller** : **Traefik** (natif K3s) assurant le routage interne vers les services.
+*   **Placement des Workloads** :
+    *   **Redis** : Pinned sur le **Master Node** via `nodeSelector` pour isoler la donnée du calcul intensif.
+    *   **App (F1 Vote)** : Pinned sur les **Worker Nodes** via `nodeAffinity` (Anti-affinity Control-Plane).
+*   **Scaling** : HPA (Horizontal Pod Autoscaler) configuré pour scaler les pods de **2 à 8 réplicas** suivant l'utilisation CPU.
 
-* **Ce qu'on a :**
-* Le réseau AWS (VPC, Subnets, Internet Gateway).
-* Le Firewall (Security Groups).
-* Les 3 serveurs (1 Master + 2 Workers) qui se lancent automatiquement.
+### 3. Configuration (Ansible)
+*   **Bootstrapping** : Installation automatisée de K3s.
+*   **Join Token** : Récupération dynamique du token sur le Master et propagation sécurisée aux Workers pour l'assemblage du cluster.
+*   **OS Hardening** : Pré-configuration des paquets essentiels et mises à jour de sécurité.
 
+### 4. CI/CD (GitHub Actions)
+*   **Smart Pipeline** : Détection intelligente des changements (Paths Filter) pour déclencher le build Docker uniquement si le code source change.
+*   **Secure Deployment** : Déploiement via **SSH Tunneling (ProxyCommand)** à travers le Bastion pour atteindre le Master privé.
+*   **Zero-Downtime** : Utilisation de `kubectl rollout status` pour garantir que la nouvelle version est saine avant de terminer le déploiement.
+*   **Registry** : Utilisation de **GHCR** (GitHub Container Registry) pour stocker les images docker taggées par SHA de commit.
 
-* **Reste à faire :** Rien. Le code est propre (`terraform apply` suffit).
+## 📦 Workload Applicatif
 
-#### ⚠️ PHASE 2 : Configuration Système (Ansible)
+L'application déployée ("F1 Voting App") sert de témoin pour valider la résilience de l'infrastructure. Le scénario retenu simule le vote "Driver of the Day" de la Formule 1, un cas d'usage caractérisé par des pics de charge intenses et soudains (Burst Traffic) en fin de course. Elle est composée de deux micro-services :
+* **Frontend/Backend** : SvelteKit (Node.js) gérant l'interface et l'API.
+* **Data Store** : Redis pour la persistance volatile haute performance.
 
-**Statut : À FAIRE (Actuellement manuel)**
+**Fonctionnalités exposées :**
+* **Route Publique (`/`)** : Interface utilisateur connectée via WebSocket pour le vote temps réel.
+* **Route Administration (`/admin`)** : Interface de pilotage permettant de modifier l'état du système (Ouverture/Fermeture des votes, Reset) et de visualiser les métriques Redis en direct.
 
-* **État actuel :** On a tapé des commandes SSH à la main (`curl ... | sh`, copie du token, etc.). Si on détruit les serveurs, il faut tout refaire à la main.
-* **Objectif :** Écrire un "Playbook" Ansible.
-* 1 clic -> Ansible se connecte aux 3 serveurs.
-* Il installe K3s Master.
-* Il récupère le token tout seul.
-* Il installe les K3s Workers et les connecte.
-* *Résultat : Cluster prêt en 2 minutes sans toucher au clavier.*
+## 🚀 Guide de Déploiement
 
+Cette procédure permet de répliquer l'intégralité de l'infrastructure sur un compte AWS vierge.
 
+### 1. Pré-requis
+* Un compte AWS avec accès programmatique (Access Key/Secret Key).
+* Terraform & Ansible installés sur la machine de contrôle.
 
-#### ⚠️ PHASE 3 : Déploiement App & DB (Kubernetes)
+### 2. Provisioning Infrastructure (Terraform)
+Initialisation et application du plan d'infrastructure :
+```bash
+cd terraform
+terraform init
+terraform apply
+```
 
-**Statut : FONCTIONNEL (Mais perfectible)**
+### 3. Configuration Cluster (Ansible)
 
-* **État actuel :**
-* Redis tourne sur le Master (✅).
-* L'App tourne sur les Workers (✅).
-* La communication interne fonctionne (✅).
-* Déploiement via fichiers YAML appliqués à la main.
+Mise à jour de l'inventaire avec les IPs provisionnées et exécution du playbook :
 
+```bash
+cd ansible
+ansible-playbook -i inventory.ini playbook.yml
+```
 
-* **Reste à faire :** Nettoyer les fichiers YAML pour la phase suivante (voir Phase 4).
+### 4. Configuration CI/CD (GitHub)
 
-#### 🛑 PHASE 4 : Réseau & Sécurité (Ingress)
+Configurer les secrets suivants dans le dépôt pour permettre au pipeline de piloter le cluster :
 
-**Statut : À FAIRE (Gros morceau)**
+| Secret | Description |
+| --- | --- |
+| `MASTER_HOST` | IP Privée du nœud Master (Accessible via Bastion) |
+| `BASTION_HOST` | IP Publique du Bastion |
+| `SSH_PRIVATE_KEY` | Contenu de la clé privée SSH utilisée par Ansible |
 
-* **État actuel :**
-* Accès via `http://IP:30000` (Moche et Dangereux).
-* Les Workers sont exposés directement sur Internet.
+**Variable d'environnement :**
 
+* `APP_URL` : DNS du Load Balancer AWS (requis pour les environnements de déploiement).
 
-* **Objectif :**
-* Passer les Services en `ClusterIP` (Privé, accessible uniquement dans le cluster).
-* Installer/Configurer un **Ingress Controller** (Traefik ou Nginx).
-* Configurer un nom de domaine (ex: `f1.mon-site.com`).
-* Fermer le port 30000 dans le firewall AWS.
+### 5. Lancement
 
+Pour le premier déploiement, rendez-vous dans l'onglet **Actions** de GitHub, sélectionnez le workflow **"Production Deployment"** et cliquez sur **Run workflow**.
 
+Par la suite, tout commit poussé sur la branche `main` impactant l'application (`app/`) ou les manifestes Kubernetes (`kubernetes/`) déclenchera automatiquement le pipeline de mise à jour.
 
-#### 🛑 PHASE 5 : Automatisation (CI/CD - GitHub Actions)
+> [!WARNING]
+> **Cost Management :** Cette infrastructure utilise des ressources AWS réelles (EC2, VPC, ELB). Pour éviter des coûts inutiles après utilisation, n'oubliez pas de détruire les ressources :
+> ```bash
+> cd terraform && terraform destroy
+> ```
 
-**Statut : À FAIRE**
+## 🛠️ Stack Technologique
 
-* **État actuel :**
-* Build Docker manuel sur ton PC.
-* Push manuel sur DockerHub.
-* `kubectl apply` manuel sur le serveur.
+### DevOps & Cloud
+*   **AWS** : Infrastructure & Services Cloud Natifs.
+*   **Terraform** : Infrastructure as Code.
+*   **Ansible** : Configuration Management.
+*   **Kubernetes (K3s)** : Orchestration de conteneurs.
+*   **GitHub Actions** : CI/CD.
+*   **Docker** : Container Registry.
 
-
-* **Objectif :**
-* Tu modifies le code VS Code -> `git push`.
-* GitHub Actions teste le code.
-* GitHub Actions build l'image et la push.
-* GitHub Actions parle à ton cluster pour mettre à jour l'app tout seul.
-
-
-
-#### 🆕 PHASE 6 : Monitoring (Observabilité)
-
-**Statut : À FAIRE (La cerise sur le gâteau)**
-
-* **État actuel :** On pilote à l'aveugle (on ne sait pas si les serveurs souffrent).
-* **Objectif :** Stack **Prometheus + Grafana**.
-* **Prometheus :** Aspire les métriques (CPU, RAM, Disque, Nombre de votes/sec).
-* **Grafana :** Affiche de beaux tableaux de bord graphiques.
-* *Bonus :* Alertes (Recevoir un mail si Redis tombe).
-
-
-
----
-
-### 📅 Programme pour demain
-
-On va suivre l'ordre logique :
-
-1. **Matin :** Automatisation de l'installation du cluster (**Ansible**).
-2. **Midi :** Propreté Réseau (**Ingress** & **Domaine**) pour virer le port 30000.
-3. **Après-midi :** Pipeline de déploiement (**GitHub Actions**).
-4. **Fin de journée :** Monitoring (**Grafana**).
-
-Bonne nuit, repose-toi bien, demain on industrialise tout ça ! 😴🛠️
+### Application Components
+*   **SvelteKit** : Framework Frontend & API.
+*   **Redis** : Base de données clé-valeur.
+*   **TailwindCSS** : Utilitaire CSS.
+*   **WebSocket** : Communication temps réel.
