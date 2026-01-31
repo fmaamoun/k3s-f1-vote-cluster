@@ -1,0 +1,78 @@
+name: Build & Deploy to K3s
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:      # Manual trigger button
+
+env:
+  # Replace with your actual DockerHub username/repo
+  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/f1-voting-app
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        # Tag with "latest" AND the commit hash for versioning/traceability
+        tags: ${{ env.IMAGE_NAME }}:latest,${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to K3s via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        # 1. Bastion Configuration (Jump Host)
+        proxy_host: ${{ secrets.BASTION_HOST }}
+        proxy_username: ubuntu
+        proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+        # 2. Target Configuration (Private Master Node)
+        host: ${{ secrets.MASTER_HOST }}
+        username: ubuntu
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+        # 3. Deployment Script
+        script: |
+          # Define a temporary directory for deployment files
+          DEPLOY_DIR=~/k8s-deploy-temp
+          
+          # Clean up any previous run artifacts
+          rm -rf $DEPLOY_DIR
+          mkdir -p $DEPLOY_DIR
+          
+          # Clone the repository to get the Kubernetes YAML files
+          # (We clone everything, but we will only use the /kubernetes folder)
+          git clone https://github.com/${{ github.repository }}.git $DEPLOY_DIR
+          
+          # Apply the Kubernetes configurations (Services, Deployments, Ingress)
+          echo "Applying Kubernetes manifests..."
+          kubectl apply -f $DEPLOY_DIR/kubernetes/
+          
+          # Force update the image to the new version we just built
+          # This ensures the Pods restart even if the YAML didn't change
+          echo "Updating application image to: ${{ github.sha }}"
+          kubectl set image deployment/f1-app f1-app=${{ env.IMAGE_NAME }}:${{ github.sha }} -n f1-vote
+          
+          # Wait for the rollout to complete successfully
+          kubectl rollout status deployment/f1-app -n f1-vote
+          
+          # CLEANUP: Remove the temporary folder to keep the server clean
+          # This removes Terraform/Ansible files that we don't need on prod
+          rm -rf $DEPLOY_DIR
+          echo "Cleanup done."
