@@ -1,171 +1,59 @@
 export interface Driver {
-	id: string;
-	name: string;
-	number: number;
-	team: string;
-	color: string;
-	textColor?: string;
+	id: string
+	name: string
+	team: string
+	number: number
+	color: string
 }
 
 export const drivers: Driver[] = [
+	// McLaren
+	{ id: 'norris', name: 'Lando Norris', team: 'McLaren', number: 1, color: '#FF8000' },
+	{ id: 'piastri', name: 'Oscar Piastri', team: 'McLaren', number: 81, color: '#FF8000' },
+
+	// Ferrari
+	{ id: 'leclerc', name: 'Charles Leclerc', team: 'Ferrari', number: 16, color: '#E8002D' },
+	{ id: 'hamilton', name: 'Lewis Hamilton', team: 'Ferrari', number: 44, color: '#E8002D' },
+
+	// Red Bull Racing
 	{
 		id: 'verstappen',
 		name: 'Max Verstappen',
-		number: 1,
 		team: 'Red Bull Racing',
-		color: '#3671C6',
-		textColor: '#FFFFFF'
+		number: 3,
+		color: '#3671C6'
 	},
-	{
-		id: 'perez',
-		name: 'Sergio Pérez',
-		number: 11,
-		team: 'Red Bull Racing',
-		color: '#3671C6',
-		textColor: '#FFFFFF'
-	},
-	{
-		id: 'hamilton',
-		name: 'Lewis Hamilton',
-		number: 44,
-		team: 'Ferrari',
-		color: '#E8002D',
-		textColor: '#FFFFFF'
-	},
-	{
-		id: 'leclerc',
-		name: 'Charles Leclerc',
-		number: 16,
-		team: 'Ferrari',
-		color: '#E8002D',
-		textColor: '#FFFFFF'
-	},
-	{
-		id: 'norris',
-		name: 'Lando Norris',
-		number: 4,
-		team: 'McLaren',
-		color: '#FF8000',
-		textColor: '#000000'
-	},
-	{
-		id: 'piastri',
-		name: 'Oscar Piastri',
-		number: 81,
-		team: 'McLaren',
-		color: '#FF8000',
-		textColor: '#000000'
-	},
-	{
-		id: 'russell',
-		name: 'George Russell',
-		number: 63,
-		team: 'Mercedes',
-		color: '#27F4D2',
-		textColor: '#000000'
-	},
-	{
-		id: 'antonelli',
-		name: 'Andrea Kimi Antonelli',
-		number: 12,
-		team: 'Mercedes',
-		color: '#27F4D2',
-		textColor: '#000000'
-	},
-	{
-		id: 'alonso',
-		name: 'Fernando Alonso',
-		number: 14,
-		team: 'Aston Martin',
-		color: '#229971',
-		textColor: '#FFFFFF'
-	},
-	{
-		id: 'stroll',
-		name: 'Lance Stroll',
-		number: 18,
-		team: 'Aston Martin',
-		color: '#229971',
-		textColor: '#FFFFFF'
-	},
-	{
-		id: 'gasly',
-		name: 'Pierre Gasly',
-		number: 10,
-		team: 'Alpine',
-		color: '#FF87BC',
-		textColor: '#000000'
-	},
-	{
-		id: 'doohan',
-		name: 'Jack Doohan',
-		number: 7,
-		team: 'Alpine',
-		color: '#FF87BC',
-		textColor: '#000000'
-	},
-	{
-		id: 'hulkenberg',
-		name: 'Nico Hülkenberg',
-		number: 27,
-		team: 'Sauber',
-		color: '#52E252',
-		textColor: '#000000'
-	},
-	{
-		id: 'bortoleto',
-		name: 'Gabriel Bortoleto',
-		number: 5,
-		team: 'Sauber',
-		color: '#52E252',
-		textColor: '#000000'
-	},
-	{
-		id: 'tsunoda',
-		name: 'Yuki Tsunoda',
-		number: 22,
-		team: 'RB',
-		color: '#6692FF',
-		textColor: '#FFFFFF'
-	},
-	{
-		id: 'lawson',
-		name: 'Liam Lawson',
-		number: 30,
-		team: 'RB',
-		color: '#6692FF',
-		textColor: '#FFFFFF'
-	},
-	{
-		id: 'albon',
-		name: 'Alex Albon',
-		number: 23,
-		team: 'Williams',
-		color: '#64C4FF',
-		textColor: '#000000'
-	},
-	{
-		id: 'sainz',
-		name: 'Carlos Sainz',
-		number: 55,
-		team: 'Williams',
-		color: '#64C4FF',
-		textColor: '#000000'
-	},
-	{
-		id: 'ocon',
-		name: 'Esteban Ocon',
-		number: 31,
-		team: 'Haas',
-		color: '#B6BABD',
-		textColor: '#000000'
-	},
-	{
-		id: 'bearman',
-		name: 'Oliver Bearman',
-		number: 87,
-		team: 'Haas',
-		color: '#B6BABD',
-		textColor: '#000000'
-	}
-];
+	{ id: 'hadjar', name: 'Isack Hadjar', team: 'Red Bull Racing', number: 6, color: '#3671C6' },
+
+	// Mercedes
+	{ id: 'russell', name: 'George Russell', team: 'Mercedes', number: 63, color: '#27F4D2' },
+	{ id: 'antonelli', name: 'Kimi Antonelli', team: 'Mercedes', number: 12, color: '#27F4D2' },
+
+	// Williams
+	{ id: 'albon', name: 'Alexander Albon', team: 'Williams', number: 23, color: '#64C4FF' },
+	{ id: 'sainz', name: 'Carlos Sainz', team: 'Williams', number: 55, color: '#64C4FF' },
+
+	// Racing Bulls
+	{ id: 'lawson', name: 'Liam Lawson', team: 'Racing Bulls', number: 30, color: '#5E8FAA' },
+	{ id: 'lindblad', name: 'Arvid Lindblad', team: 'Racing Bulls', number: 41, color: '#5E8FAA' },
+
+	// Aston Martin
+	{ id: 'alonso', name: 'Fernando Alonso', team: 'Aston Martin', number: 14, color: '#229971' },
+	{ id: 'stroll', name: 'Lance Stroll', team: 'Aston Martin', number: 18, color: '#229971' },
+
+	// Haas
+	{ id: 'ocon', name: 'Esteban Ocon', team: 'Haas', number: 31, color: '#B6BABD' },
+	{ id: 'bearman', name: 'Oliver Bearman', team: 'Haas', number: 87, color: '#B6BABD' },
+
+	// Audi
+	{ id: 'hulkenberg', name: 'Nico Hülkenberg', team: 'Audi', number: 27, color: '#C92D4B' },
+	{ id: 'bortoleto', name: 'Gabriel Bortoleto', team: 'Audi', number: 5, color: '#C92D4B' },
+
+	// Alpine
+	{ id: 'gasly', name: 'Pierre Gasly', team: 'Alpine', number: 10, color: '#FF87BC' },
+	{ id: 'colapinto', name: 'Franco Colapinto', team: 'Alpine', number: 43, color: '#FF87BC' },
+
+	// Cadillac
+	{ id: 'perez', name: 'Sergio Pérez', team: 'Cadillac', number: 11, color: '#F4C430' },
+	{ id: 'bottas', name: 'Valtteri Bottas', team: 'Cadillac', number: 77, color: '#F4C430' }
+]

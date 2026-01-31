@@ -1,0 +1,20 @@
+# terraform/.gitignore
+
+# Terraform binary downloads
+.terraform/
+.terraform.lock.hcl
+
+# Terraform State (CONTAINS SENSITIVE DATA)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Crash logs
+crash.log
+
+# Variable files containing passwords
+*.tfvars
+*.auto.tfvars
+
+# Ignores any .pem file in this folder
+*.pem

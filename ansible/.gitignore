@@ -1,0 +1,7 @@
+# ansible/.gitignore
+
+# Retry files (created when a script fails)
+*.retry
+
+# Inventory files (Because AWS IPs change every time you destroy/apply)
+inventory.ini

@@ -1,0 +1,18 @@
+# playbook.yml
+- name: Configure Common Base
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Configure Master
+  hosts: master
+  become: true
+  roles:
+    - master
+
+- name: Configure Workers
+  hosts: workers
+  become: true
+  roles:
+    - worker

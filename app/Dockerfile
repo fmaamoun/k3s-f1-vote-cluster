@@ -1,41 +1,35 @@
-# Étape 1 : Build
-FROM node:20-alpine AS builder
+# Stage 1: Build the application
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances
+# Copy package files and install dependencies
 COPY package*.json ./
-
-# Installer les dépendances
 RUN npm ci
 
-# Copier le code source
+# Copy the rest of the application code
 COPY . .
 
-# Build de l'application
+# Build the SvelteKit application
 RUN npm run build
 
-# Étape 2 : Production
-FROM node:20-alpine
+# Remove development dependencies
+RUN npm prune --production
+
+# Stage 2: Create the production image
+FROM node:24-alpine
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY package*.json ./
-
-# Installer uniquement les dépendances de production
-RUN npm ci --only=production
-
-# Copier le build depuis l'étape précédente
+# Copy built assets and production node_modules from builder
 COPY --from=builder /app/build ./build
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
 
-# Exposer le port
+# Expose the port the app runs on
+ENV PORT=3000
+ENV REDIS_URL="redis://localhost:6379"
 EXPOSE 3000
 
-# Variables d'environnement
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV REDIS_URL=redis://redis:6379
-
-# Démarrer l'application
+# Start the application
 CMD ["node", "build"]

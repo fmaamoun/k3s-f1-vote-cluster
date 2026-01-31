@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: f1-app
+  namespace: f1-vote
+spec:
+  selector:
+    matchLabels:
+      app: f1-app
+  template:
+    metadata:
+      labels:
+        app: f1-app
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+      containers:
+      - name: f1-app
+        image: fmaamoun/f1-vote-app:v1  
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi" 
+          limits:
+            cpu: "500m"     
+            memory: "256Mi" 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: f1-service
+  namespace: f1-vote
+spec:
+  type: ClusterIP
+  selector:
+    app: f1-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
