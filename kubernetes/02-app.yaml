@@ -21,7 +21,7 @@ spec:
                 operator: DoesNotExist
       containers:
       - name: f1-app
-        image: ghcr.io/fmaamoun/f1-vote-app:latest
+        image: ghcr.io/username/f1-vote-app:latest # This will be dynamically replaced in the GitHub Actions workflow
         ports:
         - containerPort: 3000
         env:

@@ -31,7 +31,7 @@ jobs:
       with:
         filters: |
           app:
-            - 'app/**'        # <--- Capture ALL: src, Dockerfile, package.json...
+            - 'app/**'
           k8s:
             - 'kubernetes/**'
 
@@ -41,12 +41,12 @@ jobs:
         BUILD="false"
         DEPLOY="false"
 
-        # Rule 1: We only build if the 'app' folder (which contains the Dockerfile) has changed
+        # Rule 1: Build only if 'app' changed
         if [[ "${{ steps.filter.outputs.app }}" == "true" ]]; then
           BUILD="true"
         fi
 
-        # Rule 2: We deploy if App changes OR K8s changes OR Manual
+        # Rule 2: Deploy if App or K8s changes, or manual
         if [[ "${{ steps.filter.outputs.app }}" == "true" ]] || \
            [[ "${{ steps.filter.outputs.k8s }}" == "true" ]] || \
            [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
@@ -56,7 +56,7 @@ jobs:
         echo "build=$BUILD" >> $GITHUB_OUTPUT
         echo "deploy=$DEPLOY" >> $GITHUB_OUTPUT
 
-  # JOB 2: THE BUILDER (GHCR)
+  # JOB 2: THE BUILDER
   build-and-push:
     needs: check-changes
     if: needs.check-changes.outputs.should_build == 'true'
@@ -81,7 +81,6 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v4
       with:
-        # FIXED CONTEXT: Point to the app/ folder where the Dockerfile is
         context: ./app
         push: true
         tags: ${{ env.IMAGE_NAME }}:latest,${{ env.IMAGE_NAME }}:${{ github.sha }}
@@ -101,6 +100,17 @@ jobs:
     - name: Lowercase Image Name
       run: |
         echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV
+
+    - name: Prepare Kubernetes Manifests
+      run: |
+        # Choose tag: SHA (if build) or Latest (if no build)
+        if [[ "${{ needs.check-changes.outputs.should_build }}" == "true" ]]; then
+          TAG="${{ github.sha }}"
+        else
+          TAG="latest"
+        fi
+        
+        sed -i "s|image: .*|image: ${{ env.IMAGE_NAME }}:$TAG|g" kubernetes/02-app.yaml
 
     - name: Copy Kubernetes files via SCP
       uses: appleboy/scp-action@v0.1.7
@@ -128,12 +138,6 @@ jobs:
           
           kubectl apply -f /home/ubuntu/k8s-deploy/kubernetes/
           
-          if [ "${{ needs.check-changes.outputs.should_build }}" == "true" ]; then
-             echo "Updating Image to GHCR version..."
-             kubectl set image deployment/f1-app f1-app=${{ env.IMAGE_NAME }}:${{ github.sha }} -n f1-vote
-             kubectl rollout status deployment/f1-app -n f1-vote
-          else
-             echo "No Build. Skipping image update."
-          fi
+          kubectl rollout status deployment/f1-app -n f1-vote
           
           rm -rf /home/ubuntu/k8s-deploy
