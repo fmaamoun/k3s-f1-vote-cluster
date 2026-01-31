@@ -6,13 +6,10 @@
 	import { Card } from '$lib/components/ui/card'
 	import * as Empty from '$lib/components/ui/empty'
 	import { ScrollArea } from '$lib/components/ui/scroll-area'
+	import { Spinner } from '$lib/components/ui/spinner'
 	import f1Logo from '$lib/assets/f1-logo.svg'
 	import {
-		Loader2,
 		CheckCircle2,
-		XCircle,
-		Flag,
-		Clock,
 		Trophy,
 		RefreshCcwIcon
 	} from 'lucide-svelte'
@@ -187,8 +184,7 @@
 				<div class="container mx-auto flex max-w-4xl justify-end gap-4">
 					<Button onclick={handleVote} disabled={!selectedDriver || isSubmitting}>
 						{#if isSubmitting}
-							<Loader2 class="mr-2 h-4 w-4 animate-spin" />
-							Submitting...
+							<Spinner class="mr-2 h-4 w-4" />
 						{:else}
 							Submit
 						{/if}

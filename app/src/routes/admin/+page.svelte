@@ -152,8 +152,8 @@
 											<Spinner />
 										{:else}
 											<LockKeyholeOpen class="h-4 w-4 " />
+											Open Voting
 										{/if}
-										Open Voting
 									</Button>
 								</AlertDialogTrigger>
 								<AlertDialogContent>
@@ -179,8 +179,8 @@
 											<Spinner />
 										{:else}
 											<Square class="h-4 w-4 " />
+											End Voting
 										{/if}
-										End Voting
 									</Button>
 								</AlertDialogTrigger>
 								<AlertDialogContent>
@@ -206,8 +206,8 @@
 											<Spinner />
 										{:else}
 											<Send class="h-4 w-4 " />
+											Publish Results
 										{/if}
-										Publish Results
 									</Button>
 								</AlertDialogTrigger>
 								<AlertDialogContent>
@@ -233,8 +233,8 @@
 											<Spinner />
 										{:else}
 											<Plus class="h-4 w-4 " />
+											New Voting Session
 										{/if}
-										New Voting Session
 									</Button>
 								</AlertDialogTrigger>
 								<AlertDialogContent>
