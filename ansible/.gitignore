@@ -5,11 +5,3 @@
 
 # Inventory files (Because AWS IPs change every time you destroy/apply)
 inventory.ini
-hosts.ini
-
-# Temporary keys if you copy them here
-*.pem
-
-# K3s Kubeconfig (if we fetch it from the server later)
-k3s.yaml
-kubeconfig

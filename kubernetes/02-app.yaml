@@ -1,21 +1,9 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: f1-service
-spec:
-  type: ClusterIP
-  selector:
-    app: f1-app
-  ports:
-  - port: 80
-    targetPort: 3000
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: f1-app
+  namespace: f1-vote
 spec:
-  replicas: 3
   selector:
     matchLabels:
       app: f1-app
@@ -24,7 +12,6 @@ spec:
       labels:
         app: f1-app
     spec:
-      # RULE: Forbidden on Master (So it goes to Workers)
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -34,9 +21,30 @@ spec:
                 operator: DoesNotExist
       containers:
       - name: f1-app
-        image: fmaamoun/f1-vote-app:v1 
+        image: fmaamoun/f1-vote-app:v1  
         ports:
         - containerPort: 3000
         env:
         - name: REDIS_URL
           value: "redis://redis:6379"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi" 
+          limits:
+            cpu: "500m"     
+            memory: "256Mi" 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: f1-service
+  namespace: f1-vote
+spec:
+  type: ClusterIP
+  selector:
+    app: f1-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
