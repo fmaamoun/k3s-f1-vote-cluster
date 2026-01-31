@@ -21,7 +21,7 @@ spec:
                 operator: DoesNotExist
       containers:
       - name: f1-app
-        image: fmaamoun/f1-vote-app:v1  
+        image: fmaamoun/f1-vote-app:latest  
         ports:
         - containerPort: 3000
         env:
