@@ -1,6 +1,6 @@
-# Cloud-Native DevOps Architecture Showcase
+# Projet DevOps/Cloud - AWS & K3s - Plateforme de vote
 
-Ce projet est une démonstration technique d'une architecture Cloud Native & DevOps de bout en bout. Il matérialise les concepts d'Infrastructure-as-Code, d'orchestration et d'automatisation CI/CD pour garantir la résilience d'un service critique (application de vote en temps réel) sur un environnement cloud auto-géré.
+Ce projet est une démonstration technique d'une architecture Cloud Native & DevOps de bout en bout. Il matérialise les concepts d'Infrastructure-as-Code, d'orchestration et d'automatisation CI/CD pour garantir la résilience d'un service critique (plateforme de vote) sur un environnement cloud auto-géré.
 
 ![Status](https://img.shields.io/github/actions/workflow/status/fmaamoun/k3s-f1-vote-cluster/deploy.yml?label=Pipeline&logo=github)
 ![AWS](https://img.shields.io/badge/AWS-Infrastructure-FF9900?logo=amazon-aws&logoColor=white)
@@ -55,7 +55,7 @@ L'application déployée ("F1 Voting App") sert de témoin pour valider la rési
 * **Data Store** : Redis pour la persistance volatile haute performance.
 
 **Fonctionnalités exposées :**
-* **Route Publique (`/`)** : Interface utilisateur connectée via WebSocket pour le vote temps réel.
+* **Route Publique (`/`)** : Interface utilisateur pour le vote et la visualisation des résultats.
 * **Route Administration (`/admin`)** : Interface de pilotage permettant de modifier l'état du système (Ouverture/Fermeture des votes, Reset) et de visualiser les métriques Redis en direct.
 
 ## 🚀 Guide de Déploiement
@@ -123,4 +123,3 @@ Par la suite, tout commit poussé sur la branche `main` impactant l'application 
 *   **SvelteKit** : Framework Frontend & API.
 *   **Redis** : Base de données clé-valeur.
 *   **TailwindCSS** : Utilitaire CSS.
-*   **WebSocket** : Communication temps réel.
